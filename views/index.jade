@@ -1,0 +1,74 @@
+extends layout
+
+block head
+  
+  script(type='text/javascript').
+
+      document.addEventListener("DOMContentLoaded", function() {
+        
+        var results = ko.observableArray();
+        ko.applyBindings(results, document.getElementById("content"));
+
+        var st = new $jit.ST({
+          //id of viz container element
+          injectInto: 'infovis',
+          //set duration for the animation
+          duration: 800,
+          //set animation transition type
+          transition: $jit.Trans.Quart.easeInOut,
+          //set distance between node and its children
+          levelDistance: 50,
+          //enable panning
+          Navigation: {
+            enable:true,
+            panning:true
+          },
+          //set node and edge styles
+          //set overridable=true for styling individual
+          //nodes or edges
+          Node: {
+              height: 20,
+              width: 60,
+              type: 'rectangle',
+              color: '#aaa',
+              overridable: true
+          },
+          
+          Edge: {
+              type: 'bezier',
+              overridable: true
+          },
+          onCreateLabel: function(label, node){
+            label.id = node.id;            
+            label.innerHTML = node.name;
+          }
+        });
+
+        var nuget = fxNuget(results, function(package) {
+            st.loadJSON(package);
+            st.compute();
+            st.refresh();
+        });
+
+        var inputStream = asStream(document.getElementById("search"));
+        inputStream.subscribe(nuget.searchPackages);
+
+      });
+
+block content
+  div(class='row')
+    div(class='span6 offset1')
+      h1= title
+      p Welcome to #{title}
+      form
+        input(id='search', type='text', autocomplete='off')
+      div
+        ul(id='content', data-bind='foreach: $data')
+          li
+            a(data-bind='click: openPackage')
+              span(data-bind='text: Id, attr: {title: Description}')
+            span , Version:
+            span(data-bind='text: Version')
+
+    div(class='span5')
+      div(id='infovis')
