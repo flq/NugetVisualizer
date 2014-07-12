@@ -9,9 +9,8 @@ block head
         var results = ko.observableArray();
         ko.applyBindings(results, document.getElementById("content"));
 
-        var nuget = fxNuget(results, function(package) {
-            var container = document.getElementById('singlePackage');
-            var options = {
+        var container = document.getElementById('singlePackage');
+        var options = {
               nodes: {
                 shape: 'box'
               },
@@ -23,8 +22,24 @@ block head
               hierarchicalLayout: {
                   direction: "down"
               }
-            };
-            var network = new vis.Network(container, package, options);
+        };
+
+        var data = {
+          nodes: new vis.DataSet(),
+          edges: new vis.DataSet(),
+        }
+
+        var network = new vis.Network(container, data, options);
+
+        var nuget = fxNuget(results, function(package) {
+            // Haha, using _.each tripped up the this mapping somewhere inside
+            // vis.js
+            for (var i = 0; i < package.nodes.length; i++) {
+              data.nodes.add(package.nodes[i]);
+            }
+            for (var i = 0; i < package.edges.length; i++) {
+              data.edges.add(package.edges[i]);
+            }
         });
 
         var inputStream = asStream(document.getElementById("search"));

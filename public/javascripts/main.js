@@ -38,11 +38,12 @@ function packageToNet(package) {
   };
 
   var childNodes = _.map(package.Dependencies.split("|"), function(text) {
-      return { id : hashCode(text), label : text };
+      var textAndVersion = text.split(/\:(.+)?/);
+      return { id : hashCode(text), label : textAndVersion[0], version : textAndVersion[1] };
   });
 
   var edges = _.map(childNodes, function(cn) {
-    return { from: root.id, to: cn.id };
+    return { from: root.id, to: cn.id, label: cn.version };
   });
 
   return {
