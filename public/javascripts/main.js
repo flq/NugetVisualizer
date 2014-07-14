@@ -37,9 +37,8 @@ function packageToNet(package) {
     label : package.Id + "(" + package.Version + ")"
   };
 
-  var childNodes = _.map(package.Dependencies.split("|"), function(text) {
-      var textAndVersion = text.split(/\:(.+)?/);
-      return { id : hashCode(text), label : textAndVersion[0], version : textAndVersion[1] };
+  var childNodes = _.map(package.Dependencies, function(item) {
+      return { id : hashCode(item.id), label : item.id, version : item.version };
   });
 
   var edges = _.map(childNodes, function(cn) {
@@ -57,15 +56,33 @@ function fxNuget(results, packageLoadCallback) {
   var url = Handlebars.compile("http://www.nuget.org/api/v2/Search()?$filter=IsLatestVersion&$skip=0&$top=10&searchTerm='{{this}}'&includePrerelease=false")
   var singlePackage = Handlebars.compile("http://www.nuget.org/api/v2/Packages()?$filter=Id%20eq%20%27{{this.Id}}%27%20and%20Version%20eq%20%27{{this.Version}}%27")
   
+    var structureDependencies = function(dependencies) {
+      if (dependencies == "") {
+        return [];
+      }
+      return _.map(dependencies.split("|"), function(text) {
+          var parts = text.split(":");
+          return { id : parts[0], version : parts[1], targetFw : parts[2] };
+      });      
+    };
 
-  var loadPackage = function(item) {
+    var toPackageStructure = function(odataPackage) {
+      return {
+            Id: odataPackage.Id,
+            Description: odataPackage.Description,
+            Version: odataPackage.Version,
+            Dependencies: structureDependencies(odataPackage.Dependencies)
+          };
+    };
+
+    var loadPackage = function(item) {
       OData.read(
       {
           requestUri: singlePackage(item),
           enableJsonpCallback: true
       },
       function (data,response) {
-        var package = data.results[0];
+        var package = toPackageStructure(data.results[0]);
         packageLoadCallback(packageToNet(package));
       });
     };
@@ -79,14 +96,8 @@ function fxNuget(results, packageLoadCallback) {
       },
       function (data,response) {
         results.removeAll();
-        results.pushAll(_.map(data.results, function(item) {
-          return {
-            Id: item.Id,
-            Description: item.Description,
-            Version: item.Version,
-            openPackage: loadPackage
-          };
-        }));
+        results.pushAll(_.map(data.results, function(p) { 
+          return _.extend(toPackageStructure(p), { openPackage: loadPackage }) }));
       });
     }
   };
