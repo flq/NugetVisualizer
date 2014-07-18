@@ -7,7 +7,7 @@ block head
       document.addEventListener("DOMContentLoaded", function() {
         
         var results = ko.observableArray();
-        ko.applyBindings(results, document.getElementById("content"));
+        ko.applyBindings(results, document.getElementById("results"));
 
         var container = document.getElementById('singlePackage');
         var options = {
@@ -15,12 +15,14 @@ block head
                 shape: 'box'
               },
               edges: {
-                length: 120,
                 style: 'arrow',
                 color: 'green'
               },
-              hierarchicalLayout: {
-                  direction: "down"
+              physics: {
+                repulsion: {
+                  centralGravity: 0.1,
+                  nodeDistance: 200
+                }
               }
         };
 
@@ -31,36 +33,55 @@ block head
 
         var network = new vis.Network(container, data, options);
 
-        var nuget = fxNuget(results, function(package) {
+        var nuget = fxNuget(results, function(package,isFirst) {
+            if (isFirst) {
+                data.nodes.clear();
+                data.edges.clear();
+            }
             // Haha, using _.each tripped up the this mapping somewhere inside
             // vis.js
             for (var i = 0; i < package.nodes.length; i++) {
-              data.nodes.add(package.nodes[i]);
+              var newNode = package.nodes[i];
+              if (data.nodes.get(newNode.id) === null) {
+                data.nodes.add(newNode);
+              }
             }
             for (var i = 0; i < package.edges.length; i++) {
-              data.edges.add(package.edges[i]);
+              var newEdge = package.edges[i];
+              if (data.edges.get(newEdge.id) === null) {
+                data.edges.add(newEdge);
+              } 
             }
         });
 
         var inputStream = asStream(document.getElementById("search"));
         inputStream.subscribe(nuget.searchPackages);
 
+        $('#search').focus();
+
       });
 
 block content
-  div(class='row')
-    div(class='span4 offset1')
-      h1= title
-      p Welcome to #{title}
-      form
-        input(id='search', type='text', autocomplete='off')
-      div
-        ul(id='content', data-bind='foreach: $data')
-          li
-            a(data-bind='click: openPackage')
-              span(data-bind='text: Id, attr: {title: Description}')
-            span , Version:
-            span(data-bind='text: Version')
+  nav(class='navbar navbar-default' role='navigation')
+    div(class='container-fluid')
+      div(class='navbar-header')
+        span(class='navbar-brand') Nuget Deps Visualizer
+      ul(class='nav navbar-nav')
+        li
+          form(class='navbar-form navbar-left')
+            div(class='form-group')
+              input(id='search', type='text', class='form-control', autocomplete='off')
+        li(class='dropdown')
+          a(href='#', class='dropdown-toggle' data-toggle='dropdown') Matching Packages
+            span(class='caret')
+          ul(id='results', class='dropdown-menu', data-bind='foreach: $data')
+            li
+              a(data-bind='click: openPackage')
+                  span(data-bind='text: Id, attr: {title: Description}')
+                  span , Version:
+                  span(data-bind='text: Version')
 
-    div(class='span7')
-      div(id='singlePackage')
+  div(class='container-fluid')
+    div(class='row')
+      div(class='span12')
+        div(id='singlePackage')
