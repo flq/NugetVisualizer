@@ -1,5 +1,5 @@
-/// <reference path="NugetVisualizer.ts" />
-module NugetVisualizer {
+/// <reference path="NugetVis.ts" />
+module NugetVis {
 
 	declare var ko;
 
