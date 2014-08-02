@@ -1,11 +1,10 @@
 /// <reference path="definitelyTyped/rx.js.TypeScript.DefinitelyTyped.0.4.0/Content/Scripts/typings/rx.js/rx.lite.d.ts" />
 /// <reference path="definitelyTyped/underscore.TypeScript.DefinitelyTyped.0.4.4/Content/Scripts/typings/underscore/underscore.d.ts" />
-/// <reference path="NugetVisPackageTypes.ts" />
 module NugetVis {
 
 	declare var OData;
 
-		interface NugetPackage {
+	export interface NugetPackage {
 		Id : string;
 		Version : string;
 		Description : string;
@@ -15,22 +14,22 @@ module NugetVis {
 		Dependencies : string;
 	}
 
-	interface Dependency {
+	export interface Dependency {
 		Id : string;
 		Version : string;
 		TargetFw : string;
 	}
 
-	interface LocalPackage extends NugetPackage {
+	export interface LocalPackage extends NugetPackage {
 		Dependencies : Dependency[];
 		loadPackage : (package : LocalPackage) => void
 	}	
 
 
-	class Loader {
+	export class Loader {
 
 		private searchUrlStr = "/Search()?$filter=IsLatestVersion&$skip=0&$top=10&searchTerm='{term}'&includePrerelease=false";
-		private loadByIdAndVersion = "Packages()?$filter=Id%20eq%20%27{id}%27%20and%20Version%20eq%20%27{version}%27";
+		private loadByIdAndVersion = "/Packages()?$filter=Id%20eq%20%27{id}%27%20and%20Version%20eq%20%27{version}%27";
 		
 		rootUrl : string;
 

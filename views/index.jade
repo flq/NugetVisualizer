@@ -33,29 +33,14 @@ block head
 
         var network = new vis.Network(container, data, options);
 
-        var nuget = fxNuget(results, function(package,isFirst) {
-            if (isFirst) {
-                data.nodes.clear();
-                data.edges.clear();
-            }
-            // Haha, using _.each tripped up the this mapping somewhere inside
-            // vis.js
-            for (var i = 0; i < package.nodes.length; i++) {
-              var newNode = package.nodes[i];
-              if (data.nodes.get(newNode.id) === null) {
-                data.nodes.add(newNode);
-              }
-            }
-            for (var i = 0; i < package.edges.length; i++) {
-              var newEdge = package.edges[i];
-              if (data.edges.get(newEdge.id) === null) {
-                data.edges.add(newEdge);
-              } 
-            }
-        });
-
-        var inputStream = asStream(document.getElementById("search"));
-        inputStream.subscribe(nuget.searchPackages);
+        var inputStream = NugetVis.asStream(document.getElementById("search"));
+        var loader = new NugetVis.Loader("http://www.nuget.org/api/v2");
+        loader
+          .searchPackages(inputStream)
+          .subscribe(function (packages) {
+            results.removeAll();
+            results.pushAll(packages);
+          });
 
         $('#search').focus();
 
@@ -76,7 +61,7 @@ block content
             span(class='caret')
           ul(id='results', class='dropdown-menu', data-bind='foreach: $data')
             li
-              a(data-bind='click: openPackage')
+              a(data-bind='click: loadPackage')
                   span(data-bind='text: Id, attr: {title: Description}')
                   span , Version:
                   span(data-bind='text: Version')
