@@ -8,14 +8,13 @@ module NugetVis {
 	interface Node {
 		id : number;
 		label : string;
-		version : string;
 	}
 
 	interface Edge {
 		id : number;
 		from : number;
 		to : number;
-		label : string;
+		label? : string;
 	}
 
 	interface NetFragment {
@@ -29,7 +28,7 @@ module NugetVis {
 		private net : { nodes; edges };
 		private network;
 
-		constructor(container) {
+		constructor(container, packageGraph : Rx.Observable<LocalPackage>) {
 
 			var options = {
 				nodes: {
@@ -53,27 +52,32 @@ module NugetVis {
         			};
 
         			this.network = new vis.Network(container, this.net, options);
+
+        			packageGraph.subscribe(this.incorporatePackageInGraph);
 		}
 
-		private hashCode(str : string) : number {
-			var hash = 0, i, chr, len;
-			if (str.length == 0) return hash;
-			for (i = 0, len = str.length; i < len; i++) {
-				chr = str.charCodeAt(i);
-				hash = ((hash << 5) - hash) + chr;
-				hash |= 0; // Convert to 32bit integer
-			}
-			return hash;
-		}
-
-		private nodesFromDependencies(deps : Dependency[]) : Node[] {
-			return _.map(deps, item => {
+		private incorporatePackageInGraph(package : LocalPackage) {
+			var node : Node = this.toNode(package);
+			var deps : Node[] = _.map(package.Dependencies, this.toNode);
+			var edges : Edge[] = _.map(deps, d => {
 				return {
-					id: this.hashCode(item.Id),
-					label: item.Id,
-					version: item.Version
-				};
+					id : node.id + d.id,
+					from : node.id,
+					to : d.id
+				}
 			});
+			this.updateNet({
+				nodes : [node].concat(deps),
+				edges : edges,
+				isFirstFragment : package.isFirst
+			});
+		}
+
+		private toNode(package : VersionedPackage) : Node {
+			return {
+				id : this.hashCode(package.Id),
+				label :  package.Id
+			};
 		}
 
 		private updateNet(netFragment : NetFragment) {
@@ -95,6 +99,17 @@ module NugetVis {
 					this.net.edges.add(newEdge);
 				} 
 			}
+		}
+
+		private hashCode(str : string) : number {
+			var hash = 0, i, chr, len;
+			if (str.length == 0) return hash;
+			for (i = 0, len = str.length; i < len; i++) {
+				chr = str.charCodeAt(i);
+				hash = ((hash << 5) - hash) + chr;
+				hash |= 0; // Convert to 32bit integer
+			}
+			return hash;
 		}
 	}
 }

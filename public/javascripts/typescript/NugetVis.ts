@@ -24,7 +24,7 @@ module NugetVis {
 	export interface LocalPackage extends NugetPackage {
 		Dependencies : Dependency[];
 		loadPackage : (package : LocalPackage) => void;
-		isFirst? : boolean;
+		isFirst : boolean;
 	}	
 
 
@@ -62,27 +62,36 @@ module NugetVis {
 		}
 
 		private loadPackageDeep(package : LocalPackage) {
+
+			this.graphSubject.onNext(package);
+
+			_.each(package.Dependencies, dep => {
+				this.loadPackage(dep, false);
+			});
+		}
+
+		private loadPackage(package : VersionedPackage, isFirst : boolean) {
 			OData.read({
 				requestUri : this.loadUrl(package),
 				enableJsonpCallback : true
 			}, (data, response) => {
-				var package = this.convertRemoteToLocal(data.results[0]);
-				this.graphSubject.onNext(package);
-				//TODO: Keep onloading dependencies, thing with isFirst and stuff.
+				var package = this.convertRemoteToLocal(data.results[0], false);
+				this.loadPackageDeep(package);
 			});
 		}
 
 		private convertRemotesToLocals(packages : RemotePackage[]) : LocalPackage [] {
-			return _.map(packages, this.convertRemoteToLocal);
+			return _.map(packages, p => this.convertRemoteToLocal(p));
 		}
 
-		private convertRemoteToLocal(p : RemotePackage) : LocalPackage {
+		private convertRemoteToLocal(p : RemotePackage, isFirst : boolean = true) : LocalPackage {
 			return {
 					Id : p.Id,
 					Version : p.Version,
 					Description : p.Description,
 					Dependencies: this.constructDependencies(p.Dependencies),
-					loadPackage : this.loadPackageDeep
+					loadPackage : this.loadPackageDeep,
+					isFirst : isFirst
 				};
 		}
 
@@ -112,11 +121,10 @@ module NugetVis {
 		}
 
 		private loadUrl(package : VersionedPackage) : string {
-			return this.rootUrl + this.loadByIdAndVersion.replace("{id}", package.Id).replace("{version}", package.Version);
-		}
-
-		private loadUrlWithoutVersion(id : string) : string {
-			return this.rootUrl + this.loadByIdOnly.replace("{id}", id);
+			return this.rootUrl + 
+			package.Version != "" ?
+			this.loadByIdAndVersion.replace("{id}", package.Id).replace("{version}", package.Version) :
+			this.loadByIdOnly.replace("{id}", package.Id);
 		}
 
 	}
