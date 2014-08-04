@@ -8,6 +8,7 @@ module NugetVis {
 	interface Node {
 		id : number;
 		label : string;
+		version : string;
 	}
 
 	interface Edge {
@@ -40,7 +41,7 @@ module NugetVis {
 				},
 				physics: {
 					repulsion: {
-						centralGravity: 0.1,
+						
 						nodeDistance: 200
 					}
 				}
@@ -53,17 +54,18 @@ module NugetVis {
 
         			this.network = new vis.Network(container, this.net, options);
 
-        			packageGraph.subscribe(this.incorporatePackageInGraph);
+        			packageGraph.subscribe(p => this.incorporatePackageInGraph(p));
 		}
 
 		private incorporatePackageInGraph(package : LocalPackage) {
-			var node : Node = this.toNode(package);
-			var deps : Node[] = _.map(package.Dependencies, this.toNode);
+			var node : Node = this.toNode(package, true);
+			var deps : Node[] = _.map(package.Dependencies, dep => this.toNode(dep));
 			var edges : Edge[] = _.map(deps, d => {
 				return {
 					id : node.id + d.id,
 					from : node.id,
-					to : d.id
+					to : d.id,
+					label : d.version
 				}
 			});
 			this.updateNet({
@@ -73,10 +75,11 @@ module NugetVis {
 			});
 		}
 
-		private toNode(package : VersionedPackage) : Node {
+		private toNode(package : VersionedPackage, showVersion : boolean = false) : Node {
 			return {
 				id : this.hashCode(package.Id),
-				label :  package.Id
+				label :  showVersion ? (package.Id + " (" + package.Version + ")") : package.Id,
+				version : package.Version
 			};
 		}
 

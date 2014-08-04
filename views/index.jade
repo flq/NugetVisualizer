@@ -3,44 +3,24 @@ extends layout
 block head
   
   script(type='text/javascript').
+      
+      var loader = new NugetVis.Loader("http://www.nuget.org/api/v2");
 
       document.addEventListener("DOMContentLoaded", function() {
         
         var results = ko.observableArray();
         ko.applyBindings(results, document.getElementById("results"));
 
-        var container = document.getElementById('singlePackage');
-        var options = {
-              nodes: {
-                shape: 'box'
-              },
-              edges: {
-                style: 'arrow',
-                color: 'green'
-              },
-              physics: {
-                repulsion: {
-                  centralGravity: 0.1,
-                  nodeDistance: 200
-                }
-              }
-        };
-
-        var data = {
-          nodes: new vis.DataSet(),
-          edges: new vis.DataSet(),
-        }
-
-        var network = new vis.Network(container, data, options);
-
         var inputStream = NugetVis.asStream(document.getElementById("search"));
-        var loader = new NugetVis.Loader("http://www.nuget.org/api/v2");
+        
         loader
           .searchPackages(inputStream)
           .subscribe(function (packages) {
             results.removeAll();
             results.pushAll(packages);
           });
+
+        var visAdapter = new NugetVis.VisAdapter(document.getElementById('singlePackage'), loader.graphFillingStream());
 
         $('#search').focus();
 

@@ -75,6 +75,9 @@ module NugetVis {
 				requestUri : this.loadUrl(package),
 				enableJsonpCallback : true
 			}, (data, response) => {
+				if (data.results.length == 0) {
+					return;
+				}
 				var package = this.convertRemoteToLocal(data.results[0], false);
 				this.loadPackageDeep(package);
 			});
@@ -90,7 +93,7 @@ module NugetVis {
 					Version : p.Version,
 					Description : p.Description,
 					Dependencies: this.constructDependencies(p.Dependencies),
-					loadPackage : this.loadPackageDeep,
+					loadPackage : p => this.loadPackageDeep(p),
 					isFirst : isFirst
 				};
 		}
@@ -122,9 +125,9 @@ module NugetVis {
 
 		private loadUrl(package : VersionedPackage) : string {
 			return this.rootUrl + 
-			package.Version != "" ?
+			(package.Version != "" ?
 			this.loadByIdAndVersion.replace("{id}", package.Id).replace("{version}", package.Version) :
-			this.loadByIdOnly.replace("{id}", package.Id);
+			this.loadByIdOnly.replace("{id}", package.Id));
 		}
 
 	}
