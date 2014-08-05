@@ -183,22 +183,24 @@ var NugetVis;
         };
 
         VisAdapter.prototype.updateNet = function (netFragment) {
+            var _this = this;
             if (netFragment.isFirstFragment) {
                 this.net.nodes.clear();
                 this.net.edges.clear();
             }
 
-            for (var i = 0; i < netFragment.nodes.length; i++) {
-                var newNode = netFragment.nodes[i];
-                if (this.net.nodes.get(newNode.id) === null) {
-                    this.net.nodes.add(newNode);
-                }
-            }
-            for (var i = 0; i < netFragment.edges.length; i++) {
-                var newEdge = netFragment.edges[i];
-                if (this.net.edges.get(newEdge.id) === null) {
-                    this.net.edges.add(newEdge);
-                }
+            _.each(netFragment.nodes, function (n) {
+                _this.addIfNotAlreadyPresent(_this.net.nodes, n);
+            });
+
+            _.each(netFragment.edges, function (e) {
+                _this.addIfNotAlreadyPresent(_this.net.edges, e);
+            });
+        };
+
+        VisAdapter.prototype.addIfNotAlreadyPresent = function (dataSet, item) {
+            if (dataSet.get(item.id) === null) {
+                dataSet.add(item);
             }
         };
 

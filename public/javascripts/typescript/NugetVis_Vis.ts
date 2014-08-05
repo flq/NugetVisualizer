@@ -5,14 +5,16 @@ module NugetVis {
 
 	declare var vis;
 
-	interface Node {
+	interface HasId {
 		id : number;
+	}
+
+	interface Node extends HasId {
 		label : string;
 		version : string;
 	}
 
-	interface Edge {
-		id : number;
+	interface Edge extends HasId {
 		from : number;
 		to : number;
 		label? : string;
@@ -41,7 +43,6 @@ module NugetVis {
 				},
 				physics: {
 					repulsion: {
-						
 						nodeDistance: 200
 					}
 				}
@@ -84,23 +85,24 @@ module NugetVis {
 		}
 
 		private updateNet(netFragment : NetFragment) {
+			
 			if (netFragment.isFirstFragment) {
 				this.net.nodes.clear();
 				this.net.edges.clear();
 			}
-			// Haha, using _.each tripped up the this mapping somewhere inside
-			// vis.js
-			for (var i = 0; i < netFragment.nodes.length; i++) {
-				var newNode = netFragment.nodes[i];
-				if (this.net.nodes.get(newNode.id) === null) {
-					this.net.nodes.add(newNode);
-				}
-			}
-			for (var i = 0; i < netFragment.edges.length; i++) {
-				var newEdge = netFragment.edges[i];
-				if (this.net.edges.get(newEdge.id) === null) {
-					this.net.edges.add(newEdge);
-				} 
+			
+			_.each(netFragment.nodes, n => {
+				this.addIfNotAlreadyPresent(this.net.nodes, n);
+			});
+
+			_.each(netFragment.edges, e => {
+				this.addIfNotAlreadyPresent(this.net.edges, e);
+			});
+		}
+
+		private addIfNotAlreadyPresent(dataSet, item : HasId) {
+			if (dataSet.get(item.id) === null) {
+				dataSet.add(item);
 			}
 		}
 
