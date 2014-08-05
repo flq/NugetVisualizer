@@ -6,7 +6,7 @@ block head
       
       var loader = new NugetVis.Loader("http://www.nuget.org/api/v2");
 
-      document.addEventListener("DOMContentLoaded", function() {
+      $(function() {
         
         var results = ko.observableArray();
         ko.applyBindings(results, document.getElementById("results"));
